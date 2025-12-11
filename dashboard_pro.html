@@ -1,7 +1,11 @@
 <!--
-Profi-Dashboard (Browser, System, Bildschirm, Internet-Speed)
-Beschreibung: Verbesserte Version, erkennt Browser, Betriebssystem (inkl. Intel vs ARM), Bildschirm, Pixelratio, und misst Internetgeschwindigkeit.
-Speichern: Als dashboard_pro.html speichern und im Browser öffnen.
+Profi Dashboard mit Diagrammen (Chart.js)
+Features:
+- Präzise Browser & OS-Erkennung (inkl. ARM64)
+- Bildschirmauflösung & Pixel-Ratio
+- Internet-Speed-Test mit Diagramm
+- Live-Diagramm für Downloadgeschwindigkeit
+Speichern: dashboard_chart.html und im Browser öffnen
 -->
 
 <!doctype html>
@@ -9,7 +13,7 @@ Speichern: Als dashboard_pro.html speichern und im Browser öffnen.
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Profi Dashboard — System & Speed</title>
+<title>Profi Dashboard mit Diagramm</title>
 <style>
 :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#60a5fa}
 html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;color:#e6eef8;background:linear-gradient(180deg,#071126 0%,#071427 60%);}
@@ -29,9 +33,10 @@ h1{font-size:20px;margin:0}
 .small{font-size:12px;color:var(--muted)}
 .center{display:flex;flex-direction:column;align-items:flex-start}
 footer{margin-top:16px;color:var(--muted);font-size:13px}
-.chip{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:999px;font-size:13px}
+button{padding:6px 12px;border:none;border-radius:8px;background:#6366f1;color:white;cursor:pointer}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/bowser@2.12.0/es5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -39,13 +44,12 @@ footer{margin-top:16px;color:var(--muted);font-size:13px}
 <div style="width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#6366f1);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:20px;">DB</div>
 <div>
 <h1>Profi Dashboard</h1>
-<div class="muted">System, Browser, Bildschirm & Speed Test</div>
+<div class="muted">System, Browser, Bildschirm & Speed-Test</div>
 </div>
 </header>
 <main>
 <section class="grid">
 
-<!-- Uhrzeit -->
 <div class="card big" id="timeCard">
 <div class="title">Aktuelle Uhrzeit & Datum</div>
 <div style="display:flex;justify-content:space-between;align-items:center">
@@ -54,13 +58,11 @@ footer{margin-top:16px;color:var(--muted);font-size:13px}
 <div id="date" class="muted"></div>
 </div>
 <div class="center">
-<div class="chip" id="timezone">Zeitzone</div>
 <div class="small" style="margin-top:6px">Aktualisiert jede Sekunde</div>
 </div>
 </div>
 </div>
 
-<!-- System & Browser -->
 <div class="card">
 <div class="title">System & Browser</div>
 <div class="row" style="margin-top:6px">
@@ -74,48 +76,32 @@ footer{margin-top:16px;color:var(--muted);font-size:13px}
 </div>
 </div>
 
-<!-- Bildschirm -->
 <div class="card">
 <div class="title">Bildschirm</div>
 <div class="muted" id="screenInfo"></div>
 </div>
 
-<!-- Internet Speed -->
 <div class="card big">
 <div class="title">Internetgeschwindigkeit</div>
-<div class="row" style="margin-top:8px">
-<div style="flex:1">
-<div class="muted">Download (Mbit/s)</div>
-<div id="download" class="value">–</div>
-</div>
-<div style="flex:1">
-<div class="muted">Upload (Mbit/s)</div>
-<div id="upload" class="value">–</div>
-</div>
-<div style="flex:1">
-<div class="muted">Ping (ms)</div>
-<div id="ping" class="value">–</div>
-</div>
-</div>
-<button onclick="runSpeedTest()" style="margin-top:10px;padding:6px 12px;border:none;border-radius:8px;background:#6366f1;color:white;cursor:pointer;">Speed Test starten</button>
+<canvas id="speedChart" height="150"></canvas>
+<button onclick="runSpeedTest()" style="margin-top:10px">Speed Test starten</button>
 </div>
 </section>
 </main>
 <footer>
-Speichere die Datei als <code>dashboard_pro.html</code> und öffne sie im Browser.
+Speichere als <code>dashboard_chart.html</code> und öffne im Browser.
 </footer>
 </div>
 <script>
-// Uhrzeit + Datum
+// Uhrzeit
 function updateTime(){
   const now = new Date();
   document.getElementById('time').textContent = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
   document.getElementById('date').textContent = now.toLocaleDateString([], {weekday:'short',year:'numeric',month:'short',day:'numeric'});
-  document.getElementById('timezone').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || '–';
 }
 setInterval(updateTime,1000); updateTime();
 
-// Browser & OS via Bowser
+// Browser & OS
 const browser = bowser.getParser(window.navigator.userAgent);
 const osName = browser.getOSName(true);
 const osVersion = browser.getOSVersion();
@@ -128,9 +114,13 @@ document.getElementById('browserVer').textContent = browser.getBrowserVersion();
 // Bildschirm
 document.getElementById('screenInfo').textContent = `${screen.width}×${screen.height}, Pixel-Ratio: ${window.devicePixelRatio || 1}`;
 
-// Internet Speed Test (einfach, browserbasiert)
+// Chart.js
+const ctx = document.getElementById('speedChart').getContext('2d');
+const speedData = {labels:[],datasets:[{label:'Download Mbit/s',data:[],backgroundColor:'rgba(96,165,250,0.3)',borderColor:'rgba(96,165,250,1)',borderWidth:1} ]};
+const speedChart = new Chart(ctx,{type:'line',data:speedData,options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{beginAtZero:true}}}});
+
 async function runSpeedTest(){
-  const testFile = 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg'; // ca. 5MB
+  const testFile = 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg';
   const start = performance.now();
   let downloaded = 0;
   try{
@@ -145,13 +135,11 @@ async function runSpeedTest(){
     const seconds = (end-start)/1000;
     const bits = downloaded*8;
     const mbit = bits/1000000/seconds;
-    document.getElementById('download').textContent = mbit.toFixed(2);
-    // Upload & Ping können wir simulieren
-    document.getElementById('upload').textContent = '–';
-    document.getElementById('ping').textContent = '–';
-  }catch(e){
-    document.getElementById('download').textContent = 'Fehler';
-  }
+    speedData.labels.push(new Date().toLocaleTimeString());
+    speedData.datasets[0].data.push(mbit.toFixed(2));
+    if(speedData.labels.length>10){speedData.labels.shift(); speedData.datasets[0].data.shift();}
+    speedChart.update();
+  }catch(e){alert('Fehler beim Speed-Test');}
 }
 </script>
 </body>
