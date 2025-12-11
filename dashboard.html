@@ -1,0 +1,146 @@
+<!--
+Profi Dashboard mit Diagrammen (Chart.js)
+Features:
+- Präzise Browser & OS-Erkennung (inkl. ARM64)
+- Bildschirmauflösung & Pixel-Ratio
+- Internet-Speed-Test mit Diagramm
+- Live-Diagramm für Downloadgeschwindigkeit
+Speichern: dashboard_chart.html und im Browser öffnen
+-->
+
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Profi Dashboard mit Diagramm</title>
+<style>
+:root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#60a5fa}
+html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;color:#e6eef8;background:linear-gradient(180deg,#071126 0%,#071427 60%);}
+.wrap{max-width:980px;margin:28px auto;padding:18px;}
+header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+h1{font-size:20px;margin:0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.grid{grid-template-columns:1fr}}
+.card{background:rgba(255,255,255,0.03);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);min-height:92px}
+.title{font-size:13px;color:var(--muted);margin-bottom:8px}
+.value{font-size:18px;font-weight:600}
+.muted{color:var(--muted);font-size:13px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.big{grid-column:span 3}
+@media (max-width:900px){.big{grid-column:span 2}}@media (max-width:560px){.big{grid-column:span 1}}
+.small{font-size:12px;color:var(--muted)}
+.center{display:flex;flex-direction:column;align-items:flex-start}
+footer{margin-top:16px;color:var(--muted);font-size:13px}
+button{padding:6px 12px;border:none;border-radius:8px;background:#6366f1;color:white;cursor:pointer}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/bowser@2.12.0/es5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div style="width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#6366f1);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:20px;">DB</div>
+<div>
+<h1>Profi Dashboard</h1>
+<div class="muted">System, Browser, Bildschirm & Speed-Test</div>
+</div>
+</header>
+<main>
+<section class="grid">
+
+<div class="card big" id="timeCard">
+<div class="title">Aktuelle Uhrzeit & Datum</div>
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div>
+<div id="time" class="value" style="font-size:36px"></div>
+<div id="date" class="muted"></div>
+</div>
+<div class="center">
+<div class="small" style="margin-top:6px">Aktualisiert jede Sekunde</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="title">System & Browser</div>
+<div class="row" style="margin-top:6px">
+<div style="flex:1"><div class="muted">Betriebssystem</div><div id="os" class="value"></div></div>
+<div style="flex:1"><div class="muted">Architektur</div><div id="arch" class="value"></div></div>
+</div>
+<div style="height:10px"></div>
+<div class="row">
+<div style="flex:1"><div class="muted">Browser</div><div id="browser" class="value"></div></div>
+<div style="flex:1"><div class="muted">Version</div><div id="browserVer" class="value"></div></div>
+</div>
+</div>
+
+<div class="card">
+<div class="title">Bildschirm</div>
+<div class="muted" id="screenInfo"></div>
+</div>
+
+<div class="card big">
+<div class="title">Internetgeschwindigkeit</div>
+<canvas id="speedChart" height="150"></canvas>
+<button onclick="runSpeedTest()" style="margin-top:10px">Speed Test starten</button>
+</div>
+</section>
+</main>
+<footer>
+Speichere als <code>dashboard_chart.html</code> und öffne im Browser.
+</footer>
+</div>
+<script>
+// Uhrzeit
+function updateTime(){
+  const now = new Date();
+  document.getElementById('time').textContent = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('date').textContent = now.toLocaleDateString([], {weekday:'short',year:'numeric',month:'short',day:'numeric'});
+}
+setInterval(updateTime,1000); updateTime();
+
+// Browser & OS
+const browser = bowser.getParser(window.navigator.userAgent);
+const osName = browser.getOSName(true);
+const osVersion = browser.getOSVersion();
+const arch = navigator.userAgent.includes('ARM') || navigator.userAgent.includes('Apple M') ? 'ARM64' : 'Intel';
+document.getElementById('os').textContent = osName + ' ' + osVersion;
+document.getElementById('arch').textContent = arch;
+document.getElementById('browser').textContent = browser.getBrowserName();
+document.getElementById('browserVer').textContent = browser.getBrowserVersion();
+
+// Bildschirm
+document.getElementById('screenInfo').textContent = `${screen.width}×${screen.height}, Pixel-Ratio: ${window.devicePixelRatio || 1}`;
+
+// Chart.js
+const ctx = document.getElementById('speedChart').getContext('2d');
+const speedData = {labels:[],datasets:[{label:'Download Mbit/s',data:[],backgroundColor:'rgba(96,165,250,0.3)',borderColor:'rgba(96,165,250,1)',borderWidth:1} ]};
+const speedChart = new Chart(ctx,{type:'line',data:speedData,options:{responsive:true,plugins:{legend:{display:true}},scales:{y:{beginAtZero:true}}}});
+
+async function runSpeedTest(){
+  const testFile = 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg';
+  const start = performance.now();
+  let downloaded = 0;
+  try{
+    const response = await fetch(testFile);
+    const reader = response.body.getReader();
+    while(true){
+      const {done,value} = await reader.read();
+      if(done) break;
+      downloaded += value.length;
+    }
+    const end = performance.now();
+    const seconds = (end-start)/1000;
+    const bits = downloaded*8;
+    const mbit = bits/1000000/seconds;
+    speedData.labels.push(new Date().toLocaleTimeString());
+    speedData.datasets[0].data.push(mbit.toFixed(2));
+    if(speedData.labels.length>10){speedData.labels.shift(); speedData.datasets[0].data.shift();}
+    speedChart.update();
+  }catch(e){alert('Fehler beim Speed-Test');}
+}
+</script>
+</body>
+</html>
