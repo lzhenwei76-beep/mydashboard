@@ -1,251 +1,158 @@
 <!--
-Übersichtliches Dashboard (single-file)
-Beschreibung: Eine einzelne HTML-Datei, die in modernen Browsern (Safari/Chrome/Firefox) auf dem Mac läuft.
-Funktionen:
- - Uhrzeit & Datum
- - Systeminformationen (Browser, Plattform, CPU-Cores, Screen)
- - Batterie-Status
- - Netzwerk-Informationen (falls unterstützt)
- - Aktuelles Wetter (Open-Meteo, verwendet Geolocation; falls abgelehnt, wird IP-basierte Schätzung genutzt)
-
-Speichern: Speichere diese Datei als dashboard.html und öffne sie lokal im Browser (Doppelklick).
-Hosting: Für GitHub Pages: erstelle ein Repo, füge die Datei hinzu und aktiviere Pages für den main-Branch.
+Profi-Dashboard (Browser, System, Bildschirm, Internet-Speed)
+Beschreibung: Verbesserte Version, erkennt Browser, Betriebssystem (inkl. Intel vs ARM), Bildschirm, Pixelratio, und misst Internetgeschwindigkeit.
+Speichern: Als dashboard_pro.html speichern und im Browser öffnen.
 -->
 
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Dashboard — Uhrzeit · System · Wetter</title>
-  <style>
-    :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#60a5fa}
-    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;color:#e6eef8;background:linear-gradient(180deg,#071126 0%, #071427 60%);}
-    .wrap{max-width:980px;margin:28px auto;padding:18px;}
-    header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-    h1{font-size:20px;margin:0}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-    @media (max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
-    @media (max-width:560px){.grid{grid-template-columns:1fr}}
-    .card{background:rgba(255,255,255,0.03);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);min-height:92px}
-    .title{font-size:13px;color:var(--muted);margin-bottom:8px}
-    .value{font-size:18px;font-weight:600}
-    .muted{color:var(--muted);font-size:13px}
-    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-    .big{grid-column:span 3}
-    @media (max-width:900px){.big{grid-column:span 2}}@media (max-width:560px){.big{grid-column:span 1}}
-    .small{font-size:12px;color:var(--muted)}
-    .center{display:flex;flex-direction:column;align-items:flex-start}
-    footer{margin-top:16px;color:var(--muted);font-size:13px}
-    .weather-row{display:flex;gap:12px;align-items:center}
-    .chip{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:999px;font-size:13px}
-    .flex-col{display:flex;flex-direction:column}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Profi Dashboard — System & Speed</title>
+<style>
+:root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#60a5fa}
+html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;color:#e6eef8;background:linear-gradient(180deg,#071126 0%,#071427 60%);}
+.wrap{max-width:980px;margin:28px auto;padding:18px;}
+header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+h1{font-size:20px;margin:0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.grid{grid-template-columns:1fr}}
+.card{background:rgba(255,255,255,0.03);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);min-height:92px}
+.title{font-size:13px;color:var(--muted);margin-bottom:8px}
+.value{font-size:18px;font-weight:600}
+.muted{color:var(--muted);font-size:13px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.big{grid-column:span 3}
+@media (max-width:900px){.big{grid-column:span 2}}@media (max-width:560px){.big{grid-column:span 1}}
+.small{font-size:12px;color:var(--muted)}
+.center{display:flex;flex-direction:column;align-items:flex-start}
+footer{margin-top:16px;color:var(--muted);font-size:13px}
+.chip{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:999px;font-size:13px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/bowser@2.12.0/es5.min.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div style="width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#6366f1);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:20px;">DB</div>
-      <div>
-        <h1>Dein Dashboard</h1>
-        <div class="muted">Uhrzeit, Systemdaten & Wetter — übersichtlich</div>
-      </div>
-    </header>
+<div class="wrap">
+<header>
+<div style="width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#6366f1);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:20px;">DB</div>
+<div>
+<h1>Profi Dashboard</h1>
+<div class="muted">System, Browser, Bildschirm & Speed Test</div>
+</div>
+</header>
+<main>
+<section class="grid">
 
-    <main>
-      <section class="grid">
-        <!-- Uhrzeit große Karte -->
-        <div class="card big" id="timeCard">
-          <div class="title">Aktuelle Uhrzeit & Datum</div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div id="time" class="value" style="font-size:36px"></div>
-              <div id="date" class="muted"></div>
-            </div>
-            <div class="center">
-              <div class="chip" id="timezone">Zeitzone</div>
-              <div class="small" style="margin-top:6px">Aktualisiert jede Sekunde</div>
-            </div>
-          </div>
-        </div>
+<!-- Uhrzeit -->
+<div class="card big" id="timeCard">
+<div class="title">Aktuelle Uhrzeit & Datum</div>
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div>
+<div id="time" class="value" style="font-size:36px"></div>
+<div id="date" class="muted"></div>
+</div>
+<div class="center">
+<div class="chip" id="timezone">Zeitzone</div>
+<div class="small" style="margin-top:6px">Aktualisiert jede Sekunde</div>
+</div>
+</div>
+</div>
 
-        <!-- System Info -->
-        <div class="card">
-          <div class="title">System & Browser</div>
-          <div class="row" style="margin-top:6px">
-            <div style="flex:1">
-              <div class="muted">Platform</div>
-              <div id="platform" class="value"></div>
-            </div>
-            <div style="flex:1">
-              <div class="muted">Browser</div>
-              <div id="browser" class="value"></div>
-            </div>
-          </div>
-          <div style="height:10px"></div>
-          <div class="row">
-            <div style="flex:1"><div class="muted">CPU-Cores</div><div id="cores" class="value"></div></div>
-            <div style="flex:1"><div class="muted">Gerätespeicher (Schätzung)</div><div id="memory" class="value"></div></div>
-          </div>
-        </div>
+<!-- System & Browser -->
+<div class="card">
+<div class="title">System & Browser</div>
+<div class="row" style="margin-top:6px">
+<div style="flex:1"><div class="muted">Betriebssystem</div><div id="os" class="value"></div></div>
+<div style="flex:1"><div class="muted">Architektur</div><div id="arch" class="value"></div></div>
+</div>
+<div style="height:10px"></div>
+<div class="row">
+<div style="flex:1"><div class="muted">Browser</div><div id="browser" class="value"></div></div>
+<div style="flex:1"><div class="muted">Version</div><div id="browserVer" class="value"></div></div>
+</div>
+</div>
 
-        <!-- Bildschirm -->
-        <div class="card">
-          <div class="title">Bildschirm</div>
-          <div class="muted" id="screenInfo"></div>
-        </div>
+<!-- Bildschirm -->
+<div class="card">
+<div class="title">Bildschirm</div>
+<div class="muted" id="screenInfo"></div>
+</div>
 
-        <!-- Batterie -->
-        <div class="card">
-          <div class="title">Batterie</div>
-          <div id="batteryState" style="margin-top:6px">
-            <div class="muted">Lädt?: <span id="charging"></span></div>
-            <div class="muted">Level: <span id="batteryLevel"></span></div>
-            <div class="muted">Zeit bis leer/voll: <span id="batteryTime"></span></div>
-          </div>
-        </div>
+<!-- Internet Speed -->
+<div class="card big">
+<div class="title">Internetgeschwindigkeit</div>
+<div class="row" style="margin-top:8px">
+<div style="flex:1">
+<div class="muted">Download (Mbit/s)</div>
+<div id="download" class="value">–</div>
+</div>
+<div style="flex:1">
+<div class="muted">Upload (Mbit/s)</div>
+<div id="upload" class="value">–</div>
+</div>
+<div style="flex:1">
+<div class="muted">Ping (ms)</div>
+<div id="ping" class="value">–</div>
+</div>
+</div>
+<button onclick="runSpeedTest()" style="margin-top:10px;padding:6px 12px;border:none;border-radius:8px;background:#6366f1;color:white;cursor:pointer;">Speed Test starten</button>
+</div>
+</section>
+</main>
+<footer>
+Speichere die Datei als <code>dashboard_pro.html</code> und öffne sie im Browser.
+</footer>
+</div>
+<script>
+// Uhrzeit + Datum
+function updateTime(){
+  const now = new Date();
+  document.getElementById('time').textContent = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('date').textContent = now.toLocaleDateString([], {weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  document.getElementById('timezone').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || '–';
+}
+setInterval(updateTime,1000); updateTime();
 
-        <!-- Netzwerk -->
-        <div class="card">
-          <div class="title">Netzwerk</div>
-          <div class="muted">Verbindungstyp: <span id="netType"></span></div>
-          <div class="muted">Downlink (Mbps): <span id="downlink"></span></div>
-          <div class="muted">Online: <span id="online"></span></div>
-        </div>
+// Browser & OS via Bowser
+const browser = bowser.getParser(window.navigator.userAgent);
+const osName = browser.getOSName(true);
+const osVersion = browser.getOSVersion();
+const arch = navigator.userAgent.includes('ARM') || navigator.userAgent.includes('Apple M') ? 'ARM64' : 'Intel';
+document.getElementById('os').textContent = osName + ' ' + osVersion;
+document.getElementById('arch').textContent = arch;
+document.getElementById('browser').textContent = browser.getBrowserName();
+document.getElementById('browserVer').textContent = browser.getBrowserVersion();
 
-        <!-- Wetter -->
-        <div class="card big">
-          <div class="title">Wetter (aktuell)</div>
-          <div class="weather-row" style="margin-top:8px">
-            <div style="flex:1">
-              <div id="weatherMain" class="value">Wetterdaten werden geladen…</div>
-              <div id="weatherDesc" class="muted"></div>
-            </div>
-            <div style="text-align:right">
-              <div id="temp" class="value" style="font-size:28px"></div>
-              <div id="wind" class="muted"></div>
-            </div>
-          </div>
-          <div style="margin-top:8px" class="small">Standort: <span id="locName">wird ermittelt…</span></div>
-        </div>
+// Bildschirm
+document.getElementById('screenInfo').textContent = `${screen.width}×${screen.height}, Pixel-Ratio: ${window.devicePixelRatio || 1}`;
 
-      </section>
-    </main>
-
-    <footer>
-      Tipp: Speichere die Datei als <code>dashboard.html</code> und öffne sie im Browser. Bei Fragen helfe ich beim Anpassen.
-    </footer>
-  </div>
-
-  <script>
-    // Uhrzeit + Datum
-    function updateTime(){
-      const now = new Date();
-      const time = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-      const date = now.toLocaleDateString([], {weekday:'short', year:'numeric', month:'short', day:'numeric'});
-      document.getElementById('time').textContent = time;
-      document.getElementById('date').textContent = date;
-      document.getElementById('timezone').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || '–';
+// Internet Speed Test (einfach, browserbasiert)
+async function runSpeedTest(){
+  const testFile = 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg'; // ca. 5MB
+  const start = performance.now();
+  let downloaded = 0;
+  try{
+    const response = await fetch(testFile);
+    const reader = response.body.getReader();
+    while(true){
+      const {done,value} = await reader.read();
+      if(done) break;
+      downloaded += value.length;
     }
-    setInterval(updateTime, 1000); updateTime();
-
-    // System info
-    document.getElementById('platform').textContent = navigator.platform || navigator.userAgentData?.platform || 'unbekannt';
-    document.getElementById('browser').textContent = (navigator.userAgent || 'unbekannt').split(') ')[0] + ')';
-    document.getElementById('cores').textContent = navigator.hardwareConcurrency || 'nicht verfügbar';
-    document.getElementById('screenInfo').textContent = `${screen.width}×${screen.height} (${window.devicePixelRatio || 1}x)`;
-
-    // deviceMemory (nicht überall unterstützt)
-    if ('deviceMemory' in navigator){
-      document.getElementById('memory').textContent = navigator.deviceMemory + ' GB';
-    } else {
-      document.getElementById('memory').textContent = 'nicht unterstützt';
-    }
-
-    // Online status
-    function updateOnline(){ document.getElementById('online').textContent = navigator.onLine ? 'ja' : 'nein'; }
-    window.addEventListener('online', updateOnline); window.addEventListener('offline', updateOnline); updateOnline();
-
-    // Network info (experimental)
-    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-    if (conn){
-      document.getElementById('netType').textContent = conn.effectiveType || conn.type || '–';
-      document.getElementById('downlink').textContent = conn.downlink || '–';
-      conn.addEventListener('change', ()=>{
-        document.getElementById('netType').textContent = conn.effectiveType || conn.type || '–';
-        document.getElementById('downlink').textContent = conn.downlink || '–';
-      });
-    } else {
-      document.getElementById('netType').textContent = 'nicht unterstützt';
-      document.getElementById('downlink').textContent = '–';
-    }
-
-    // Battery
-    async function initBattery(){
-      try{
-        if (navigator.getBattery){
-          const bat = await navigator.getBattery();
-          function render(){
-            document.getElementById('charging').textContent = bat.charging ? 'Ja' : 'Nein';
-            document.getElementById('batteryLevel').textContent = Math.round(bat.level*100) + '%';
-            if (bat.charging) document.getElementById('batteryTime').textContent = bat.chargingTime === Infinity ? 'unbekannt' : Math.round(bat.chargingTime/60) + ' min';
-            else document.getElementById('batteryTime').textContent = bat.dischargingTime === Infinity ? 'unbekannt' : Math.round(bat.dischargingTime/60) + ' min';
-          }
-          render();
-          bat.addEventListener('chargingchange', render);
-          bat.addEventListener('levelchange', render);
-          bat.addEventListener('chargingtimechange', render);
-          bat.addEventListener('dischargingtimechange', render);
-        } else {
-          document.getElementById('batteryState').textContent = 'Batterie-API nicht unterstützt';
-        }
-      } catch(e){ document.getElementById('batteryState').textContent = 'Fehler beim Lesen der Batterie'; }
-    }
-    initBattery();
-
-    // Wetter via Geolocation + Open-Meteo
-    async function fetchWeatherByCoords(lat, lon){
-      try{
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data && data.current_weather){
-          const w = data.current_weather;
-          document.getElementById('weatherMain').textContent = `Wetter-Code: ${w.weathercode}`;
-          document.getElementById('weatherDesc').textContent = 'Open-Meteo Wettercode (0=klar, andere Werte: Regen/Schnee etc.)';
-          document.getElementById('temp').textContent = Math.round(w.temperature) + '°C';
-          document.getElementById('wind').textContent = 'Wind: ' + Math.round(w.windspeed) + ' km/h';
-          document.getElementById('locName').textContent = `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
-        } else {
-          document.getElementById('weatherMain').textContent = 'Wetterdaten nicht verfügbar';
-        }
-      } catch(e){ document.getElementById('weatherMain').textContent = 'Fehler beim Laden der Wetterdaten'; }
-    }
-
-    async function initWeather(){
-      // Versuche Geolocation
-      if (navigator.geolocation){
-        navigator.geolocation.getCurrentPosition(pos=>{
-          fetchWeatherByCoords(pos.coords.latitude, pos.coords.longitude);
-        }, async (err)=>{
-          // Falls Geolocation verweigert: Fallback per IP (ipapi.co)
-          try{
-            const res = await fetch('https://ipapi.co/json/');
-            const info = await res.json();
-            if (info && info.latitude && info.longitude){
-              fetchWeatherByCoords(info.latitude, info.longitude);
-              document.getElementById('locName').textContent = info.city ? `${info.city}, ${info.country}` : `${info.latitude}, ${info.longitude}`;
-            } else {
-              document.getElementById('weatherMain').textContent = 'Standort konnte nicht ermittelt werden';
-            }
-          } catch(e){ document.getElementById('weatherMain').textContent = 'Kein Standort verfügbar'; }
-        }, {timeout:8000});
-      } else {
-        document.getElementById('weatherMain').textContent = 'Geolocation nicht unterstützt';
-      }
-    }
-    initWeather();
-
-  </script>
+    const end = performance.now();
+    const seconds = (end-start)/1000;
+    const bits = downloaded*8;
+    const mbit = bits/1000000/seconds;
+    document.getElementById('download').textContent = mbit.toFixed(2);
+    // Upload & Ping können wir simulieren
+    document.getElementById('upload').textContent = '–';
+    document.getElementById('ping').textContent = '–';
+  }catch(e){
+    document.getElementById('download').textContent = 'Fehler';
+  }
+}
+</script>
 </body>
 </html>
